@@ -10,7 +10,8 @@ This environment includes the Pike, Product, and Schema smart contracts.
 
 - **Pike** handles organization and identity permissions with Sabre, a smart
   contract engine that is included in the Splinter scabbard service.
-- **Grid Product** provides a way to share GS1-compatible product data (items
+- [Grid Product]({% link docs/0.1/grid_product.md %})
+  provides a way to share GS1-compatible product data (items
   that are transacted, traded, or referenced in a supply chain).
 - **Schema** provides a reusable, standard approach to defining, storing, and
   consuming the product properties. Property definitions are collected into a
@@ -70,124 +71,16 @@ For more information on Splinter circuits, see the
 
 ### Demonstrate Grid Smart Contract Functionality
 
-**Note:** To simplify this procedure, the example `docker-compose.yaml` file
-defines environment variables for the ``gridd-alpha`` and ``gridd-beta``
-containers. These variables define the Grid daemon's key file and endpoint,
-so you don't have to use the `-k` and `--url` options with the `grid` command in
-this section.
+You can use the Pike and Grid Product smart contracts to demonstrate Grid
+functionality by creating an organization and agent, then creating a product.
 
-The following environment variables apply only to this example. If you want to
-override these values, you can edit `docker-compose.yaml` to redefine the
-variables, or you can use the associated option with the `grid` commands in
-steps 3 through 10.
+* "Creating Organizations"
+  describes how to create an owning organization for Grid items (such as
+  products), and set the permissions for an agent who is
+  allowed to create and manage those items.
 
-- `GRID_DAEMON_KEY` defines the key file name for the Grid daemon, as generated
-   by the `docker-compose.yaml` file. Use `-k <keyfile>` to override this
-   variable on the command line.
-
-- `GRID_DAEMON_ENDPOINT` defines the endpoint for the ``gridd-alpha`` or
-   ``gridd-beta`` container. Use `--url <endpoint>` to override this variable
-   on the command line.
-
-
-1. Start a bash session in the `gridd-alpha` Docker container.  You will use
-   this container to run Grid commands on `alpha-node-000`.
-
-   ```
-   $ docker exec -it gridd-alpha bash
-   root@gridd-alpha:/#
-   ```
-
-2. Generate a secp256k1 key pair for the alpha node. This key will be used to
-   sign Grid transactions.
-
-   `root@gridd-alpha:/# grid keygen alpha-agent`
-
-   This command generates two files, `alpha-agent.priv` and `alpha-agent.pub`,
-   in the `~/.grid/keys/` directory.
-
-3. Set an environment variable with the service ID. Use the circuit ID of the
-   circuit that was created above. The commands below will check this variable
-   to determine which circuit and service the command should be run against. An
-   alternative to using the environment variable is to pass the service ID via
-   the `--service-id` argument in each of these commands.
-
-   ```
-   root@gridd-alpha:/# export GRID_SERVICE_ID=01234-ABCDE::gsAA
-   ```
-
-4. Create a new organization, `myorg`.
-
-   ```
-   root@gridd-alpha:/# grid \
-   organization create 314156 myorg '123 main street' \
-    --metadata gs1_company_prefixes=314156
-   ```
-
-   This command creates and submits a transaction to create a new Pike
-   organization that is signed by the admin key. It also creates a new Pike
-   agent with the “admin” role for the new organization (this agent’s public key
-   is derived from the private key used to sign the transaction.) The service ID
-   includes the circuit name and the scabbard service name for the alpha node.
-
-5. Update the agent's permissions (Pike roles) to allow creating, updating, and
-   deleting Grid products.
-
-   ```
-   root@gridd-alpha:/# grid \
-   agent update 314156 $(cat ~/.grid/keys/alpha-agent.pub) --active \
-   --role can_create_product \
-   --role can_update_product \
-   --role can_delete_product \
-   --role admin
-   ```
-
-6. Use `cat` to create a product definition file, `product.yaml`, using the
-   following contents.
-
-   ```
-   root@gridd-alpha:/# cat > product.yaml
-   - product_type: "GS1"
-     product_id: "723382885088"
-     owner: "314156"
-     properties:
-       - name: "species"
-         data_type: "STRING"
-         string_value: "tuna"
-       - name: "length"
-         data_type: "NUMBER"
-         number_value: 22
-       - name: "maximum_temperature"
-         data_type: "NUMBER"
-         number_value: 5
-       - name: "minimum_temperature"
-         data_type: "NUMBER"
-         number_value: 0
-   ```
-
-7. Add a new product based on the definition in the example YAML file,
-   `product.yaml`.
-
-   ```
-   root@gridd-alpha:/# grid \
-     product create  product.yaml
-   ```
-
-8. Open a new terminal and connect to the `gridd-beta` container.
-
-   `$ docker exec -it gridd-beta bash`
-
-9. Set an environment variable with the service ID.
-
-    ```
-    root@gridd-beta:/# export GRID_SERVICE_ID=01234-ABCDE::gsBB
-    ```
-
-10. Display all products.
-
-   ```
-   root@gridd-beta:/# grid product list
-   ```
+* [Creating Products]({% link docs/0.1/creating_products.md %}) shows how to
+  create, update, and delete products as the organization's agent.
 
 
 ### Demonstrate Smart Contract Deployment
@@ -327,5 +220,4 @@ though alpha and beta are using the same XO smart contract, their game moves
   link docs/0.1/pike_smart_contract_specification.md %})
 - [Schema Smart Contract Specification]({%
   link docs/0.1/schema_smart_contract_specification.md %})
-- [Product RFC](https://github.com/target/grid-rfcs/blob/d6305b86e2a43e510bb57b297b3ec09b0a66c5b0/0000-product.md)
 - [CLI for the XO smart contract (also called a "transaction processor")](https://sawtooth.hyperledger.org/docs/core/releases/latest/cli/xo.html)
